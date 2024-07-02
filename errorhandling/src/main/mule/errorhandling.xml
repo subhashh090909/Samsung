@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="84e79737-cae1-4b69-88d0-609526742fc9" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="ea72f003-a9a1-43e2-b622-0937fbf8553e" >
+		<db:mssql-connection host="localhost" instanceName="3306" />
+	</db:config>
+	<flow name="errorhandlingFlow" doc:id="5a020f8f-f6df-442b-a17a-4d09a9ad6f4a" >
+		<http:listener doc:name="Listener" doc:id="ec94965f-67c5-45e3-8df0-ba1ed023a420" config-ref="HTTP_Listener_config" path="/error"/>
+		<logger level="INFO" doc:name="Logger" doc:id="0c26e6fc-3d37-417e-b4bd-6e2764b212a6" />
+		<try doc:name="Try" doc:id="7d68e948-d9a5-4f10-bc8c-101a5bd84b76" >
+			<db:insert doc:name="Insert" doc:id="fbf346d6-7efd-4f8b-a17b-bebfc6ef7772" config-ref="Database_Config">
+			<db:sql><![CDATA[insert into]]></db:sql>
+		</db:insert>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="8dec083d-cfd0-461a-be93-a9bb23ecfbfc" >
+					<ee:transform doc:name="Transform Message" doc:id="47e8f723-b666-4daf-bb75-c49b444dc6a1" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "running"
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<ee:transform doc:name="Transform Message" doc:id="753c904d-7c3b-4070-ac1c-46ed5979bc75">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="start" doc:id="4f6517b5-372d-4da9-a880-06b45feaacc7" message="#[payload]"/>
+		<logger level="INFO" doc:name="end" doc:id="5d337e8b-e2ff-420c-9665-b1e5fe224613" message="#[payload]"/>
+	</flow>
+</mule>
